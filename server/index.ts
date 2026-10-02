@@ -5,6 +5,7 @@ import { AIProviderError, buildPurchasePlan } from './ai.js';
 import { discoverProducts } from './catalog.js';
 import { compareProducts } from './reasoning.js';
 import { evaluatePurchase } from './policy.js';
+import { createPurchase, listPurchases, updatePurchase } from './purchaseStore.js';
 
 const approvalTokens = new Map<string, { amount: string; currency: string; expiresAt: number }>();
 
@@ -72,6 +73,10 @@ app.get('/api/config', (_req, res) => {
   });
 });
 
+app.get('/api/purchases', (_req, res) => {
+  res.json({ purchases: listPurchases() });
+});
+
 app.post('/api/paypal/orders', async (req, res) => {
   const clientId = process.env.PAYPAL_CLIENT_ID;
   const clientSecret = process.env.PAYPAL_CLIENT_SECRET;
@@ -120,6 +125,9 @@ app.post('/api/paypal/orders', async (req, res) => {
       baseUrl: process.env.PAYPAL_BASE_URL ?? 'https://api-m.sandbox.paypal.com'
     });
 
+    const purchaseId = crypto.randomUUID();
+    const purchase = createPurchase({ id: purchaseId, productId: typeof req.body?.productId === 'string' ? req.body.productId : 'unknown', productName: description ?? 'PayPilot purchase', amount, currency, status: 'checkout_created' });
+
     const order = await client.createOrder({
       amount,
       currency,
@@ -128,7 +136,9 @@ app.post('/api/paypal/orders', async (req, res) => {
       cancelUrl: process.env.PAYPAL_CANCEL_URL ?? 'http://localhost:5173/'
     });
 
+    updatePurchase(purchase.id, { paypalOrderId: order.id });
     res.status(201).json({
+      purchaseId: purchase.id,
       id: order.id,
       status: order.status,
       approveUrl: order.links?.find((link: { href: string; rel: string; method?: string }) => link.rel === 'approve')?.href ?? null
