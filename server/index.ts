@@ -100,7 +100,7 @@ app.post('/api/paypal/orders/:orderId/capture', async (req, res) => {
 
     const order = await client.captureOrder(req.params.orderId);
     res.json({ id: order.id, status: order.status });
-  } catch (error) {
+  } catch (error: unknown) {
     if (error instanceof PayPalError) {
       res.status(error.status >= 400 && error.status < 600 ? error.status : 502).json({
         error: error.message,
