@@ -6,6 +6,8 @@ import { discoverProducts } from './catalog.js';
 import { compareProducts } from './reasoning.js';
 import { evaluatePurchase } from './policy.js';
 
+const approvalTokens = new Map<string, { amount: string; currency: string; expiresAt: number }>();
+
 const app = express();
 const PORT = Number(process.env.PORT ?? 3001);
 
@@ -43,6 +45,26 @@ app.post('/api/ai/intent', async (req, res) => {
   }
 });
 
+app.post('/api/purchases/approval', (req, res) => {
+  const amount = typeof req.body?.amount === 'string' ? req.body.amount.trim() : '';
+  const currency = typeof req.body?.currency === 'string' ? req.body.currency.trim().toUpperCase() : '';
+  const decision = evaluatePurchase(amount, currency);
+
+  if (!decision.requiresApproval) {
+    res.status(decision.allowed ? 200 : 400).json({ approved: false, decision });
+    return;
+  }
+
+  const token = crypto.randomUUID();
+  approvalTokens.set(token, {
+    amount,
+    currency,
+    expiresAt: Date.now() + 10 * 60 * 1000
+  });
+
+  res.json({ approved: true, approvalToken: token, decision, expiresInSeconds: 600 });
+});
+
 app.get('/api/config', (_req, res) => {
   res.json({
     paypalConfigured: Boolean(process.env.PAYPAL_CLIENT_ID && process.env.PAYPAL_CLIENT_SECRET),
@@ -66,6 +88,20 @@ app.post('/api/paypal/orders', async (req, res) => {
   const description = typeof req.body?.description === 'string'
     ? req.body.description.trim().slice(0, 127)
     : undefined;
+  const approvalToken = typeof req.body?.approvalToken === 'string' ? req.body.approvalToken : '';
+  const decision = evaluatePurchase(amount, currency);
+
+  if (decision.requiresApproval) {
+    const approval = approvalTokens.get(approvalToken);
+    if (!approval || approval.expiresAt <= Date.now() || approval.amount !== amount || approval.currency !== currency) {
+      res.status(403).json({ error: 'Human approval is required before this purchase can proceed', decision });
+      return;
+    }
+    approvalTokens.delete(approvalToken);
+  } else if (!decision.allowed) {
+    res.status(403).json({ error: decision.reason, decision });
+    return;
+  }
 
   if (!/^\d{1,9}(?:\.\d{1,2})?$/.test(amount) || Number(amount) <= 0) {
     res.status(400).json({ error: 'Amount must be a positive USD-style decimal value' });
