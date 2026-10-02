@@ -10,6 +10,7 @@ function App() {
   const [currency, setCurrency] = useState('USD');
   const [checkoutUrl, setCheckoutUrl] = useState<string | null>(null);
   const [intentSummary, setIntentSummary] = useState<string | null>(null);
+  const [products, setProducts] = useState<Array<{ id: string; name: string; price: string; currency: string; reason: string }>>([]);
   const [state, setState] = useState<CheckoutState>('idle');
   const [message, setMessage] = useState('');
 
@@ -35,6 +36,7 @@ function App() {
   async function startShopping() {
     setState('loading');
     setIntentSummary(null);
+    setProducts([]);
     setCheckoutUrl(null);
     setMessage('');
 
@@ -46,12 +48,14 @@ function App() {
       });
       const intentData = (await intentResponse.json()) as {
         intent?: { category?: string; maxPrice?: string | null; currency?: string };
+        options?: Array<{ id: string; name: string; price: string; currency: string; reason: string }>;
         provider?: string;
         error?: string;
       };
       if (!intentResponse.ok) throw new Error(intentData.error ?? 'Unable to understand the purchase request');
 
       const intent = intentData.intent;
+      setProducts(Array.isArray((intentData as { options?: unknown }).options) ? ((intentData as { options: typeof products }).options ?? []) : []);
       setIntentSummary(
         `Intent: ${intent?.category ?? 'general'} · Budget: ${intent?.maxPrice ? `${intent.maxPrice} ${intent.currency ?? 'USD'}` : 'not specified'} · ${intentData.provider === 'ai' ? 'AI' : 'safe local parser'}`
       );
@@ -135,6 +139,20 @@ function App() {
           </button>
 
           {intentSummary && <div className="intent-summary" role="status">{intentSummary}</div>}
+
+          {products.length > 0 && (
+            <div className="product-list" aria-label="Product options">
+              {products.map((product) => (
+                <article className="product-card" key={product.id}>
+                  <div>
+                    <strong>{product.name}</strong>
+                    <p>{product.reason}</p>
+                  </div>
+                  <span>{product.currency} {product.price}</span>
+                </article>
+              ))}
+            </div>
+          )}
 
           {message && (
             <div className={`checkout-message ${state === 'error' ? 'error' : 'success'}`} role="status">
