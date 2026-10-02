@@ -14,6 +14,7 @@ function App() {
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
   const [approvalToken, setApprovalToken] = useState<string | null>(null);
   const [purchases, setPurchases] = useState<Array<{ id: string; productName: string; amount: string; currency: string; status: string; paypalOrderId?: string }>>([]);
+  const [notifications, setNotifications] = useState<Array<{ type: string; message: string; createdAt: string }>>([]);
   const [state, setState] = useState<CheckoutState>('idle');
   const [message, setMessage] = useState('');
 
@@ -35,6 +36,13 @@ function App() {
         setMessage(error instanceof Error ? error.message : 'Unable to capture the PayPal order');
       });
   }, []);
+
+  async function loadNotifications() {
+    const response = await fetch('/api/notifications');
+    if (!response.ok) return;
+    const data = (await response.json()) as { notifications?: typeof notifications };
+    setNotifications(data.notifications ?? []);
+  }
 
   async function loadPurchases() {
     const response = await fetch('/api/purchases');
@@ -225,7 +233,14 @@ function App() {
           <div><strong>Purchase Policy</strong><span>Phase 4</span></div>
         </div>
       </section>
-            <section className="purchase-history" aria-label="Purchase history">
+            <section className="notification-panel" aria-label="Purchase notifications">
+          <div className="section-heading"><h2>Agent notifications</h2><button type="button" onClick={loadNotifications}>Refresh</button></div>
+          {notifications.length === 0 ? <p className="empty-state">No notifications yet.</p> : notifications.slice(0, 5).map((item, index) => (
+            <div className="notification-row" key={item.createdAt + index}><strong>{item.type.replace('_', ' ')}</strong><span>{item.message}</span></div>
+          ))}
+        </section>
+
+        <section className="purchase-history" aria-label="Purchase history">
           <div className="section-heading"><h2>Purchase history</h2><button type="button" onClick={loadPurchases}>Refresh</button></div>
           {purchases.length === 0 ? <p className="empty-state">No PayPilot purchases yet.</p> : purchases.map((purchase) => (
             <div className="history-row" key={purchase.id}>
