@@ -10,6 +10,7 @@ function App() {
   const [intentSummary, setIntentSummary] = useState<string | null>(null);
   const [products, setProducts] = useState<Array<{ id: string; name: string; price: string; currency: string; reason: string }>>([]);
   const [comparison, setComparison] = useState<{ recommendedId: string | null; summary: string } | null>(null);
+  const [policy, setPolicy] = useState<{ allowed: boolean; requiresApproval: boolean; reason: string } | null>(null);
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
   const [state, setState] = useState<CheckoutState>('idle');
   const [message, setMessage] = useState('');
@@ -38,6 +39,7 @@ function App() {
     setIntentSummary(null);
     setProducts([]);
     setComparison(null);
+    setPolicy(null);
     setSelectedProductId(null);
     setCheckoutUrl(null);
     setMessage('');
@@ -52,6 +54,7 @@ function App() {
         intent?: { category?: string; maxPrice?: string | null; currency?: string };
         options?: Array<{ id: string; name: string; price: string; currency: string; reason: string }>;
         comparison?: { recommendedId: string | null; summary: string };
+        policy?: { allowed: boolean; requiresApproval: boolean; reason: string } | null;
         provider?: string;
         error?: string;
       };
@@ -60,6 +63,7 @@ function App() {
       const intent = intentData.intent;
       setProducts(intentData.options ?? []);
       setComparison(intentData.comparison ?? null);
+      setPolicy(intentData.policy ?? null);
       setSelectedProductId(intentData.comparison?.recommendedId ?? intentData.options?.[0]?.id ?? null);
       setIntentSummary(
         `Intent: ${intent?.category ?? 'general'} · Budget: ${intent?.maxPrice ? `${intent.maxPrice} ${intent.currency ?? 'USD'}` : 'not specified'} · ${intentData.provider === 'ai' ? 'AI' : 'safe local parser'}`
@@ -130,6 +134,12 @@ function App() {
           {intentSummary && <div className="intent-summary" role="status">{intentSummary}</div>}
 
           {comparison && <div className="comparison-summary" role="status">{comparison.summary}</div>}
+          {policy && (
+            <div className={`policy-summary ${policy.requiresApproval ? 'approval' : policy.allowed ? 'allowed' : 'blocked'}`} role="status">
+              <strong>{policy.requiresApproval ? 'Human approval required' : policy.allowed ? 'Within automatic spending policy' : 'Purchase blocked'}</strong>
+              <span>{policy.reason}</span>
+            </div>
+          )}
 
           {products.length > 0 && (
             <div className="product-list" aria-label="Product options">
