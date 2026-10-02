@@ -8,6 +8,8 @@ export type CreateOrderInput = {
   amount: string;
   currency: string;
   description?: string;
+  returnUrl: string;
+  cancelUrl: string;
 };
 
 type PayPalTokenResponse = {
@@ -84,6 +86,10 @@ export class PayPalClient {
       },
       body: JSON.stringify({
         intent: 'CAPTURE',
+        application_context: {
+          return_url: input.returnUrl,
+          cancel_url: input.cancelUrl
+        },
         purchase_units: [
           {
             description: input.description,
