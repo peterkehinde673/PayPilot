@@ -10,7 +10,7 @@
     "build": "tsc -b && vite build",
     "lint": "tsc --noEmit",
     "test": "vitest run",
-    "start": "node dist/server/server/index.js",
+    "start": "node dist/server/index.js",
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
