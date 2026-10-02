@@ -148,6 +148,7 @@ app.post('/api/paypal/orders', async (req, res) => {
     return;
   }
 
+  let purchaseIdForRollback: string | null = null;
   try {
     const client = new PayPalClient({
       clientId,
@@ -156,6 +157,7 @@ app.post('/api/paypal/orders', async (req, res) => {
     });
 
     const purchaseId = crypto.randomUUID();
+    purchaseIdForRollback = purchaseId;
     const purchase = createPurchase({ id: purchaseId, productId: typeof req.body?.productId === 'string' ? req.body.productId : 'unknown', productName: description ?? 'PayPilot purchase', amount, currency, status: 'checkout_created' });
 
     const order = await client.createOrder({
@@ -183,8 +185,8 @@ app.post('/api/paypal/orders', async (req, res) => {
       return;
     }
 
-    if (typeof purchase !== 'undefined') {
-      removePurchase(purchase.id);
+    if (purchaseIdForRollback) {
+      removePurchase(purchaseIdForRollback);
     }
     console.error('PayPal order creation failed');
     res.status(502).json({ error: 'PayPal order creation failed' });
