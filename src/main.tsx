@@ -12,6 +12,7 @@ function App() {
   const [comparison, setComparison] = useState<{ recommendedId: string | null; summary: string } | null>(null);
   const [policy, setPolicy] = useState<{ allowed: boolean; requiresApproval: boolean; reason: string } | null>(null);
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
+  const [approvalToken, setApprovalToken] = useState<string | null>(null);
   const [state, setState] = useState<CheckoutState>('idle');
   const [message, setMessage] = useState('');
 
@@ -41,6 +42,7 @@ function App() {
     setComparison(null);
     setPolicy(null);
     setSelectedProductId(null);
+    setApprovalToken(null);
     setCheckoutUrl(null);
     setMessage('');
 
@@ -60,42 +62,67 @@ function App() {
       };
       if (!intentResponse.ok) throw new Error(intentData.error ?? 'Unable to understand the purchase request');
 
-      const intent = intentData.intent;
       setProducts(intentData.options ?? []);
       setComparison(intentData.comparison ?? null);
       setPolicy(intentData.policy ?? null);
-      setSelectedProductId(intentData.comparison?.recommendedId ?? intentData.options?.[0]?.id ?? null);
+      const defaultProductId = intentData.comparison?.recommendedId ?? intentData.options?.[0]?.id ?? null;
+      setSelectedProductId(defaultProductId);
       setIntentSummary(
-        `Intent: ${intent?.category ?? 'general'} · Budget: ${intent?.maxPrice ? `${intent.maxPrice} ${intent.currency ?? 'USD'}` : 'not specified'} · ${intentData.provider === 'ai' ? 'AI' : 'safe local parser'}`
+        `Intent: ${intentData.intent?.category ?? 'general'} · Budget: ${intentData.intent?.maxPrice ? `${intentData.intent.maxPrice} ${intentData.intent.currency ?? 'USD'}` : 'not specified'} · ${intentData.provider === 'ai' ? 'AI' : 'safe local parser'}`
       );
 
-      const selectedProduct = (intentData.options ?? []).find((product) => product.id === (selectedProductId ?? intentData.comparison?.recommendedId ?? intentData.options?.[0]?.id));
+      if (!defaultProductId) throw new Error('No matching product is available for checkout');
+
+      const selectedProduct = (intentData.options ?? []).find((product) => product.id === defaultProductId);
       if (!selectedProduct) throw new Error('No matching product is available for checkout');
 
+      if (intentData.policy?.requiresApproval) {
+        const approvalResponse = await fetch('/api/purchases/approval', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ amount: selectedProduct.price, currency: selectedProduct.currency })
+        });
+        const approvalData = (await approvalResponse.json()) as {
+          approved?: boolean;
+          approvalToken?: string;
+          decision?: { reason: string; requiresApproval: boolean };
+          error?: string;
+        };
+        if (!approvalResponse.ok) throw new Error(approvalData.error ?? 'Unable to request purchase approval');
+        setApprovalToken(approvalData.approvalToken ?? null);
+        setState('ready');
+        setMessage('Human approval is required before PayPal checkout can be created.');
+        return;
+      }
+
+      await createCheckout(selectedProduct, null);
+    } catch (error: unknown) {
+      setState('error');
+      setMessage(error instanceof Error ? error.message : 'Unable to start checkout');
+    }
+  }
+
+  async function createCheckout(
+    selectedProduct: { id: string; name: string; price: string; currency: string; reason: string },
+    token: string | null
+  ) {
+    setState('loading');
+    try {
       const response = await fetch('/api/paypal/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           amount: selectedProduct.price,
           currency: selectedProduct.currency,
-          description: selectedProduct.name
+          description: selectedProduct.name,
+          approvalToken: token ?? undefined
         })
       });
+      const data = (await response.json()) as { id?: string; approveUrl?: string | null; error?: string };
+      if (!response.ok) throw new Error(data.error ?? 'Unable to create the PayPal order');
+      if (!data.approveUrl) throw new Error('PayPal created the order but did not return an approval URL');
 
-      const data = (await response.json()) as {
-        id?: string;
-        approveUrl?: string | null;
-        error?: string;
-      };
-
-      if (!response.ok) {
-        throw new Error(data.error ?? 'Unable to create the PayPal order');
-      }
-
-      if (!data.approveUrl) {
-        throw new Error('PayPal created the order but did not return an approval URL');
-      }
-
+      setApprovalToken(null);
       setCheckoutUrl(data.approveUrl);
       setState('ready');
       setMessage(`PayPal order ${data.id ?? 'created'} is ready for approval.`);
@@ -103,6 +130,13 @@ function App() {
       setState('error');
       setMessage(error instanceof Error ? error.message : 'Unable to start checkout');
     }
+  }
+
+  async function approvePurchase() {
+    if (!approvalToken || !selectedProductId) return;
+    const product = products.find((item) => item.id === selectedProductId);
+    if (!product) return;
+    await createCheckout(product, approvalToken);
   }
 
   return (
@@ -128,8 +162,13 @@ function App() {
           />
           <div className="checkout-fields"><div className="checkout-note">Checkout uses the selected catalog product price.</div></div>
           <button type="button" onClick={startShopping} disabled={state === 'loading'}>
-            {state === 'loading' ? 'Creating PayPal order…' : 'Start shopping'}
+            {state === 'loading' ? 'Working…' : 'Start shopping'}
           </button>
+          {approvalToken && (
+            <button type="button" className="approval-button" onClick={approvePurchase} disabled={state === 'loading'}>
+              Approve purchase & continue →
+            </button>
+          )}
 
           {intentSummary && <div className="intent-summary" role="status">{intentSummary}</div>}
 
