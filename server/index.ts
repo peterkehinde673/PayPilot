@@ -77,8 +77,8 @@ app.get('/api/config', (_req, res) => {
 });
 
 app.post('/api/purchases/:purchaseId/support', (req, res) => {
-  const action = req.body?.action as SupportAction;
-  if (!['track', 'refund_guidance', 'order_status'].includes(action)) {
+  const action = typeof req.body?.action === 'string' ? req.body.action as SupportAction : undefined;
+  if (!action || !['track', 'refund_guidance', 'order_status'].includes(action)) {
     res.status(400).json({ error: 'Unsupported support action' });
     return;
   }
