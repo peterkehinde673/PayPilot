@@ -2,6 +2,7 @@ import cors from 'cors';
 import express from 'express';
 import { PayPalClient, PayPalError } from './paypal.js';
 import { AIProviderError, buildPurchasePlan } from './ai.js';
+import { discoverProducts } from './catalog.js';
 
 const app = express();
 const PORT = Number(process.env.PORT ?? 3001);
@@ -22,7 +23,8 @@ app.post('/api/ai/intent', async (req, res) => {
 
   try {
     const plan = await buildPurchasePlan(request);
-    res.json(plan);
+    const options = discoverProducts(plan.intent);
+    res.json({ ...plan, options });
   } catch (error: unknown) {
     if (error instanceof AIProviderError) {
       res.status(error.status >= 400 && error.status < 600 ? error.status : 502).json({
