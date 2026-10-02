@@ -134,6 +134,8 @@ function App() {
             {state === 'loading' ? 'Creating PayPal order…' : 'Start shopping'}
           </button>
 
+          {intentSummary && <div className="intent-summary" role="status">{intentSummary}</div>}
+
           {message && (
             <div className={`checkout-message ${state === 'error' ? 'error' : 'success'}`} role="status">
               {message}
