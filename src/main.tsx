@@ -12,6 +12,7 @@ function App() {
   const [intentSummary, setIntentSummary] = useState<string | null>(null);
   const [products, setProducts] = useState<Array<{ id: string; name: string; price: string; currency: string; reason: string }>>([]);
   const [comparison, setComparison] = useState<{ recommendedId: string | null; summary: string } | null>(null);
+  const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
   const [state, setState] = useState<CheckoutState>('idle');
   const [message, setMessage] = useState('');
 
@@ -39,6 +40,7 @@ function App() {
     setIntentSummary(null);
     setProducts([]);
     setComparison(null);
+    setSelectedProductId(null);
     setCheckoutUrl(null);
     setMessage('');
 
@@ -60,17 +62,21 @@ function App() {
       const intent = intentData.intent;
       setProducts(intentData.options ?? []);
       setComparison(intentData.comparison ?? null);
+      setSelectedProductId(intentData.comparison?.recommendedId ?? intentData.options?.[0]?.id ?? null);
       setIntentSummary(
         `Intent: ${intent?.category ?? 'general'} · Budget: ${intent?.maxPrice ? `${intent.maxPrice} ${intent.currency ?? 'USD'}` : 'not specified'} · ${intentData.provider === 'ai' ? 'AI' : 'safe local parser'}`
       );
+
+      const selectedProduct = (intentData.options ?? []).find((product) => product.id === (intentData.comparison?.recommendedId ?? intentData.options?.[0]?.id));
+      if (!selectedProduct) throw new Error('No matching product is available for checkout');
 
       const response = await fetch('/api/paypal/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          amount,
-          currency,
-          description: request
+          amount: selectedProduct.price,
+          currency: selectedProduct.currency,
+          description: selectedProduct.name
         })
       });
 
@@ -118,26 +124,7 @@ function App() {
             value={request}
             onChange={(event) => setRequest(event.target.value)}
           />
-          <div className="checkout-fields">
-            <label>
-              Sandbox amount
-              <input
-                aria-label="Sandbox amount"
-                inputMode="decimal"
-                value={amount}
-                onChange={(event) => setAmount(event.target.value)}
-              />
-            </label>
-            <label>
-              Currency
-              <input
-                aria-label="Currency"
-                maxLength={3}
-                value={currency}
-                onChange={(event) => setCurrency(event.target.value.toUpperCase())}
-              />
-            </label>
-          </div>
+          <div className="checkout-fields"><div className="checkout-note">Checkout uses the selected catalog product price.</div></div>
           <button type="button" onClick={startShopping} disabled={state === 'loading'}>
             {state === 'loading' ? 'Creating PayPal order…' : 'Start shopping'}
           </button>
@@ -149,13 +136,13 @@ function App() {
           {products.length > 0 && (
             <div className="product-list" aria-label="Product options">
               {products.map((product) => (
-                <article className="product-card" key={product.id}>
+                <button type="button" className={selectedProductId === product.id ? 'product-card selected' : 'product-card'} key={product.id} onClick={() => setSelectedProductId(product.id)}>
                   <div>
                     <strong>{product.name}</strong>
                     <p>{product.reason}</p>
                   </div>
                   <span>{product.currency} {product.price}</span>
-                </article>
+                </button>
               ))}
             </div>
           )}
