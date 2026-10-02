@@ -66,9 +66,9 @@ app.post('/api/paypal/orders', async (req, res) => {
     res.status(201).json({
       id: order.id,
       status: order.status,
-      approveUrl: order.links?.find((link) => link.rel === 'approve')?.href ?? null
+      approveUrl: order.links?.find((link: { href: string; rel: string; method?: string }) => link.rel === 'approve')?.href ?? null
     });
-  } catch (error) {
+  } catch (error: unknown) {
     if (error instanceof PayPalError) {
       res.status(error.status >= 400 && error.status < 600 ? error.status : 502).json({
         error: error.message,
