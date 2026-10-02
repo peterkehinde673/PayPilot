@@ -234,9 +234,9 @@ function App() {
         </div>
 
         <div className="status-grid">
-          <div><strong>AI Agent</strong><span>Ready for Phase 3</span></div>
+          <div><strong>AI Agent</strong><span>Intent + discovery</span></div>
           <div><strong>PayPal</strong><span>Sandbox checkout</span></div>
-          <div><strong>Purchase Policy</strong><span>Phase 4</span></div>
+          <div><strong>Purchase Policy</strong><span>Human approval</span></div>
         </div>
       </section>
             <section className="notification-panel" aria-label="Purchase notifications">
