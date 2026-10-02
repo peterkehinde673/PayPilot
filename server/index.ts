@@ -181,7 +181,12 @@ app.post('/api/paypal/orders/:orderId/capture', async (req, res) => {
     });
 
     const order = await client.captureOrder(req.params.orderId);
-    res.json({ id: order.id, status: order.status });
+    const purchaseId = typeof req.body?.purchaseId === 'string' ? req.body.purchaseId : '';
+    const purchase = purchaseId ? updatePurchase(purchaseId, { status: 'captured' }) : null;
+    if (purchase) {
+      addNotification({ type: 'checkout_ready', purchaseId: purchase.id, message: `Payment captured for ${purchase.productName}.` });
+    }
+    res.json({ id: order.id, status: order.status, purchaseId: purchase?.id ?? null });
   } catch (error: unknown) {
     if (error instanceof PayPalError) {
       res.status(error.status >= 400 && error.status < 600 ? error.status : 502).json({
