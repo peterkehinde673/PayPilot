@@ -3,7 +3,15 @@ function optionalPositiveAmount(value: string | undefined, fallback: string): st
   return fallback;
 }
 
+function requiredSecret(name: string): string | undefined {
+  const value = process.env[name]?.trim();
+  return value || undefined;
+}
+
 export const config = {
+  paypalClientId: requiredSecret('PAYPAL_CLIENT_ID'),
+  paypalClientSecret: requiredSecret('PAYPAL_CLIENT_SECRET'),
+  aiApiKey: requiredSecret('AI_API_KEY'),
   port: Number.isInteger(Number(process.env.PORT)) && Number(process.env.PORT) > 0 ? Number(process.env.PORT) : 3001,
   paypalBaseUrl: process.env.PAYPAL_BASE_URL ?? 'https://api-m.sandbox.paypal.com',
   paypalReturnUrl: process.env.PAYPAL_RETURN_URL ?? 'http://localhost:5173/',
