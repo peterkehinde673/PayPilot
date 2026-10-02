@@ -67,7 +67,7 @@ function App() {
         `Intent: ${intent?.category ?? 'general'} · Budget: ${intent?.maxPrice ? `${intent.maxPrice} ${intent.currency ?? 'USD'}` : 'not specified'} · ${intentData.provider === 'ai' ? 'AI' : 'safe local parser'}`
       );
 
-      const selectedProduct = (intentData.options ?? []).find((product) => product.id === (intentData.comparison?.recommendedId ?? intentData.options?.[0]?.id));
+      const selectedProduct = (intentData.options ?? []).find((product) => product.id === (selectedProductId ?? intentData.comparison?.recommendedId ?? intentData.options?.[0]?.id));
       if (!selectedProduct) throw new Error('No matching product is available for checkout');
 
       const response = await fetch('/api/paypal/orders', {
