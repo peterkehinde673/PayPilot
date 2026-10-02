@@ -65,7 +65,7 @@ app.post('/api/purchases/approval', (req, res) => {
   }
 
   const token = issueApprovalToken(amount, currency);
-  addNotification({ type: 'approval_required', purchaseId: `approval-${token}`, message: decision.reason });
+  addNotification({ type: 'approval_required', purchaseId: 'approval-pending', message: decision.reason });
   res.json({ approved: true, approvalToken: token, decision, expiresInSeconds: 600 });
 });
 
