@@ -1,6 +1,6 @@
 import cors from 'cors';
 import express from 'express';
-import { PayPalClient, PayPalError } from './paypal';
+import { PayPalClient, PayPalError } from './paypal.js';
 
 const app = express();
 const PORT = Number(process.env.PORT ?? 3001);
