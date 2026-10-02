@@ -6,8 +6,6 @@ type CheckoutState = 'idle' | 'loading' | 'ready' | 'error';
 
 function App() {
   const [request, setRequest] = useState('Find me a programming laptop under $900');
-  const [amount, setAmount] = useState('900.00');
-  const [currency, setCurrency] = useState('USD');
   const [checkoutUrl, setCheckoutUrl] = useState<string | null>(null);
   const [intentSummary, setIntentSummary] = useState<string | null>(null);
   const [products, setProducts] = useState<Array<{ id: string; name: string; price: string; currency: string; reason: string }>>([]);
