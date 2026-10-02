@@ -80,8 +80,8 @@ app.post('/api/purchases/approval', (req, res) => {
 
 app.get('/api/config', (_req, res) => {
   res.json({
-    paypalConfigured: Boolean(process.env.PAYPAL_CLIENT_ID && process.env.PAYPAL_CLIENT_SECRET),
-    aiConfigured: Boolean(process.env.AI_API_KEY)
+    paypalConfigured: Boolean(config.paypalClientId && config.paypalClientSecret),
+    aiConfigured: Boolean(config.aiApiKey)
   });
 });
 
@@ -117,8 +117,8 @@ app.get('/api/purchases', (_req, res) => {
 });
 
 app.post('/api/paypal/orders', async (req, res) => {
-  const clientId = process.env.PAYPAL_CLIENT_ID;
-  const clientSecret = process.env.PAYPAL_CLIENT_SECRET;
+  const clientId = config.paypalClientId;
+  const clientSecret = config.paypalClientSecret;
 
   if (!clientId || !clientSecret) {
     res.status(503).json({ error: 'PayPal Sandbox is not configured' });
