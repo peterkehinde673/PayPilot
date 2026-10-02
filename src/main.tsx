@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import ReactDOM from 'react-dom/client';
 import './styles.css';
 
@@ -11,6 +11,25 @@ function App() {
   const [checkoutUrl, setCheckoutUrl] = useState<string | null>(null);
   const [state, setState] = useState<CheckoutState>('idle');
   const [message, setMessage] = useState('');
+
+  useEffect(() => {
+    const token = new URLSearchParams(window.location.search).get('token');
+    if (!token) return;
+
+    setState('loading');
+    fetch(`/api/paypal/orders/${encodeURIComponent(token)}/capture`, { method: 'POST' })
+      .then(async (response) => {
+        const data = (await response.json()) as { id?: string; status?: string; error?: string };
+        if (!response.ok) throw new Error(data.error ?? 'Unable to capture the PayPal order');
+        setState('ready');
+        setMessage(`PayPal order ${data.id ?? token} captured with status ${data.status ?? 'COMPLETED'}.`);
+        window.history.replaceState({}, document.title, window.location.pathname);
+      })
+      .catch((error: unknown) => {
+        setState('error');
+        setMessage(error instanceof Error ? error.message : 'Unable to capture the PayPal order');
+      });
+  }, []);
 
   async function startShopping() {
     setState('loading');
