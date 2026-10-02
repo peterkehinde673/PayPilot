@@ -1,8 +1,56 @@
-import React from 'react';
+import React, { useState } from 'react';
 import ReactDOM from 'react-dom/client';
 import './styles.css';
 
+type CheckoutState = 'idle' | 'loading' | 'ready' | 'error';
+
 function App() {
+  const [request, setRequest] = useState('Find me a programming laptop under $900');
+  const [amount, setAmount] = useState('900.00');
+  const [currency, setCurrency] = useState('USD');
+  const [checkoutUrl, setCheckoutUrl] = useState<string | null>(null);
+  const [state, setState] = useState<CheckoutState>('idle');
+  const [message, setMessage] = useState('');
+
+  async function startShopping() {
+    setState('loading');
+    setCheckoutUrl(null);
+    setMessage('');
+
+    try {
+      const response = await fetch('/api/paypal/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          amount,
+          currency,
+          description: request
+        })
+      });
+
+      const data = (await response.json()) as {
+        id?: string;
+        approveUrl?: string | null;
+        error?: string;
+      };
+
+      if (!response.ok) {
+        throw new Error(data.error ?? 'Unable to create the PayPal order');
+      }
+
+      if (!data.approveUrl) {
+        throw new Error('PayPal created the order but did not return an approval URL');
+      }
+
+      setCheckoutUrl(data.approveUrl);
+      setState('ready');
+      setMessage(`PayPal order ${data.id ?? 'created'} is ready for approval.`);
+    } catch (error: unknown) {
+      setState('error');
+      setMessage(error instanceof Error ? error.message : 'Unable to start checkout');
+    }
+  }
+
   return (
     <main className="app">
       <section className="hero">
@@ -16,15 +64,55 @@ function App() {
           An AI purchasing agent that understands what you need, evaluates options,
           and lets you decide when your money moves.
         </p>
+
         <div className="command-card">
-          <div className="command-label">TRY A REQUEST</div>
-          <div className="command">“Find me a programming laptop under $900”</div>
-          <button type="button">Start shopping</button>
+          <div className="command-label">PURCHASE REQUEST</div>
+          <input
+            aria-label="Purchase request"
+            value={request}
+            onChange={(event) => setRequest(event.target.value)}
+          />
+          <div className="checkout-fields">
+            <label>
+              Sandbox amount
+              <input
+                aria-label="Sandbox amount"
+                inputMode="decimal"
+                value={amount}
+                onChange={(event) => setAmount(event.target.value)}
+              />
+            </label>
+            <label>
+              Currency
+              <input
+                aria-label="Currency"
+                maxLength={3}
+                value={currency}
+                onChange={(event) => setCurrency(event.target.value.toUpperCase())}
+              />
+            </label>
+          </div>
+          <button type="button" onClick={startShopping} disabled={state === 'loading'}>
+            {state === 'loading' ? 'Creating PayPal order…' : 'Start shopping'}
+          </button>
+
+          {message && (
+            <div className={`checkout-message ${state === 'error' ? 'error' : 'success'}`} role="status">
+              {message}
+            </div>
+          )}
+
+          {checkoutUrl && (
+            <a className="approve-link" href={checkoutUrl}>
+              Continue to PayPal Sandbox →
+            </a>
+          )}
         </div>
+
         <div className="status-grid">
-          <div><strong>AI Agent</strong><span>Ready</span></div>
-          <div><strong>PayPal</strong><span>Sandbox</span></div>
-          <div><strong>Purchase Policy</strong><span>Human approval</span></div>
+          <div><strong>AI Agent</strong><span>Ready for Phase 3</span></div>
+          <div><strong>PayPal</strong><span>Sandbox checkout</span></div>
+          <div><strong>Purchase Policy</strong><span>Phase 4</span></div>
         </div>
       </section>
     </main>
