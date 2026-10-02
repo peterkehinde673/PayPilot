@@ -7,6 +7,7 @@ import { compareProducts } from './reasoning.js';
 import { evaluatePurchase } from './policy.js';
 import { createPurchase, listPurchases, updatePurchase } from './purchaseStore.js';
 import { addNotification, listNotifications } from './notifications.js';
+import { handleSupportRequest, type SupportAction } from './supportAgent.js';
 
 const approvalTokens = new Map<string, { amount: string; currency: string; expiresAt: number }>();
 
@@ -73,6 +74,20 @@ app.get('/api/config', (_req, res) => {
     paypalConfigured: Boolean(process.env.PAYPAL_CLIENT_ID && process.env.PAYPAL_CLIENT_SECRET),
     aiConfigured: Boolean(process.env.AI_API_KEY)
   });
+});
+
+app.post('/api/purchases/:purchaseId/support', (req, res) => {
+  const action = req.body?.action as SupportAction;
+  if (!['track', 'refund_guidance', 'order_status'].includes(action)) {
+    res.status(400).json({ error: 'Unsupported support action' });
+    return;
+  }
+  const result = handleSupportRequest(req.params.purchaseId, action);
+  if (!result) {
+    res.status(404).json({ error: 'Purchase not found' });
+    return;
+  }
+  res.json(result);
 });
 
 app.get('/api/purchases/:purchaseId', (req, res) => {
