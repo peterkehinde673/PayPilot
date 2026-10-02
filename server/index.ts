@@ -1,6 +1,7 @@
 import cors from 'cors';
 import express from 'express';
 import { PayPalClient, PayPalError } from './paypal.js';
+import { AIProviderError, buildPurchasePlan } from './ai.js';
 
 const app = express();
 const PORT = Number(process.env.PORT ?? 3001);
@@ -14,6 +15,25 @@ app.get('/api/health', (_req, res) => {
     service: 'paypilot-api',
     version: '0.1.0'
   });
+});
+
+app.post('/api/ai/intent', async (req, res) => {
+  const request = typeof req.body?.request === 'string' ? req.body.request : '';
+
+  try {
+    const plan = await buildPurchasePlan(request);
+    res.json(plan);
+  } catch (error: unknown) {
+    if (error instanceof AIProviderError) {
+      res.status(error.status >= 400 && error.status < 600 ? error.status : 502).json({
+        error: error.message
+      });
+      return;
+    }
+
+    console.error('AI purchase intent failed');
+    res.status(502).json({ error: 'AI purchase intent failed' });
+  }
 });
 
 app.get('/api/config', (_req, res) => {
