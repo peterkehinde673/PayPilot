@@ -39,6 +39,10 @@ app.use((_req, res, next) => {
 app.use(cors({ origin: config.webOrigin }));
 app.use(express.json({ limit: '1mb' }));
 app.use(express.static('dist'));
+app.get('*', (req, res, next) => {
+  if (req.path.startsWith('/api/')) return next();
+  res.sendFile('index.html', { root: 'dist' });
+});
 
 app.get('/api/health', (_req, res) => {
   res.json({
