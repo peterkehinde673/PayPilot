@@ -7,6 +7,7 @@ type CheckoutState = 'idle' | 'loading' | 'ready' | 'error';
 function App() {
   const [request, setRequest] = useState('Find me a programming laptop under $900');
   const [checkoutUrl, setCheckoutUrl] = useState<string | null>(null);
+  const [purchaseId, setPurchaseId] = useState<string | null>(null);
   const [intentSummary, setIntentSummary] = useState<string | null>(null);
   const [products, setProducts] = useState<Array<{ id: string; name: string; price: string; currency: string; reason: string }>>([]);
   const [comparison, setComparison] = useState<{ recommendedId: string | null; summary: string } | null>(null);
@@ -60,6 +61,7 @@ function App() {
     setSelectedProductId(null);
     setApprovalToken(null);
     setCheckoutUrl(null);
+    setPurchaseId(null);
     setMessage('');
 
     try {
@@ -135,11 +137,12 @@ function App() {
           approvalToken: token ?? undefined
         })
       });
-      const data = (await response.json()) as { id?: string; approveUrl?: string | null; error?: string };
+      const data = (await response.json()) as { purchaseId?: string; id?: string; approveUrl?: string | null; error?: string };
       if (!response.ok) throw new Error(data.error ?? 'Unable to create the PayPal order');
       if (!data.approveUrl) throw new Error('PayPal created the order but did not return an approval URL');
 
       setApprovalToken(null);
+      setPurchaseId(data.purchaseId ?? null);
       setCheckoutUrl(data.approveUrl);
       setState('ready');
       setMessage(`PayPal order ${data.id ?? 'created'} is ready for approval.`);
