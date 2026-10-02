@@ -63,7 +63,9 @@ describe('PayPalClient', () => {
     const order = await client.createOrder({
       amount: '899.99',
       currency: 'USD',
-      description: 'Programming laptop'
+      description: 'Programming laptop',
+      returnUrl: 'http://localhost:5173/',
+      cancelUrl: 'http://localhost:5173/'
     });
 
     expect(order.id).toBe('ORDER-123');
