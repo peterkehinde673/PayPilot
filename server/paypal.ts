@@ -38,7 +38,14 @@ export class PayPalClient {
   private accessToken: string | null = null;
   private accessTokenExpiresAt = 0;
 
-  constructor(private readonly config: PayPalClientConfig) {}
+  constructor(private readonly config: PayPalClientConfig) {
+    const baseUrl = new URL(config.baseUrl);
+    if (baseUrl.protocol !== 'https:') {
+      throw new PayPalError('PayPal base URL must use HTTPS', 400);
+    }
+    baseUrl.pathname = baseUrl.pathname.replace(/\\/+$/, '');
+    this.config = { ...config, baseUrl: baseUrl.toString().replace(/\\/$/, '') };
+  }
 
   async getAccessToken(): Promise<string> {
     if (this.accessToken && Date.now() < this.accessTokenExpiresAt) {
@@ -56,7 +63,8 @@ export class PayPalClient {
         Accept: 'application/json',
         'Content-Type': 'application/x-www-form-urlencoded'
       },
-      body: 'grant_type=client_credentials'
+      body: 'grant_type=client_credentials',
+      signal: AbortSignal.timeout(15_000)
     });
 
     const data = await readJson(response);
@@ -84,6 +92,7 @@ export class PayPalClient {
         'PayPal-Request-Id': crypto.randomUUID(),
         Prefer: 'return=representation'
       },
+      signal: AbortSignal.timeout(15_000),
       body: JSON.stringify({
         intent: 'CAPTURE',
         application_context: {
@@ -127,6 +136,7 @@ export class PayPalClient {
           Accept: 'application/json',
           'Content-Type': 'application/json'
         },
+        signal: AbortSignal.timeout(15_000),
         body: '{}'
       }
     );
