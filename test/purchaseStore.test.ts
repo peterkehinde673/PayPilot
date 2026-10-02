@@ -18,3 +18,23 @@ describe('purchase store', () => {
     expect(listPurchases()[0]?.productName).toBe('Pro 14 Developer Laptop');
   });
 });
+
+
+describe('purchase capture state', () => {
+  it('tracks a successful captured transition', () => {
+    createPurchase({
+      id: 'capture-test',
+      productId: 'laptop',
+      productName: 'Laptop',
+      amount: '500.00',
+      currency: 'USD',
+      status: 'checkout_created',
+      paypalOrderId: 'ORDER-CAPTURE'
+    });
+
+    const updated = updatePurchase('capture-test', { status: 'captured' });
+
+    expect(updated?.status).toBe('captured');
+    expect(listPurchases().find((item) => item.id === 'capture-test')?.status).toBe('captured');
+  });
+});
