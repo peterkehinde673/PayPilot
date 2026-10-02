@@ -19,4 +19,4 @@ describe('spending policy', () => {
     expect(result.allowed).toBe(false);
     expect(result.requiresApproval).toBe(false);
   });
-}
+});
