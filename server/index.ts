@@ -240,6 +240,11 @@ app.post('/api/paypal/orders/:orderId/capture', async (req, res) => {
       return;
     }
 
+    if (purchase.status === 'captured') {
+      res.status(409).json({ error: 'Purchase has already been captured', purchaseId: purchase.id, status: purchase.status });
+      return;
+    }
+
     const order = await client.captureOrder(req.params.orderId);
     const updatedPurchase = updatePurchase(purchase.id, { status: 'captured' });
     addNotification({ type: 'checkout_ready', purchaseId: purchase.id, message: `Payment captured for ${purchase.productName}.` });
