@@ -8,6 +8,12 @@ import { evaluatePurchase } from './policy.js';
 
 const approvalTokens = new Map<string, { amount: string; currency: string; expiresAt: number }>();
 
+function issueApprovalToken(amount: string, currency: string): string {
+  const token = crypto.randomUUID();
+  approvalTokens.set(token, { amount, currency, expiresAt: Date.now() + 10 * 60 * 1000 });
+  return token;
+}
+
 const app = express();
 const PORT = Number(process.env.PORT ?? 3001);
 
@@ -55,13 +61,7 @@ app.post('/api/purchases/approval', (req, res) => {
     return;
   }
 
-  const token = crypto.randomUUID();
-  approvalTokens.set(token, {
-    amount,
-    currency,
-    expiresAt: Date.now() + 10 * 60 * 1000
-  });
-
+  const token = issueApprovalToken(amount, currency);
   res.json({ approved: true, approvalToken: token, decision, expiresInSeconds: 600 });
 });
 
