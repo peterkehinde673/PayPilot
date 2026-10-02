@@ -20,6 +20,9 @@ function App() {
   const [message, setMessage] = useState('');
 
   useEffect(() => {
+    void loadNotifications();
+    void loadPurchases();
+
     const token = new URLSearchParams(window.location.search).get('token');
     if (!token) return;
 
