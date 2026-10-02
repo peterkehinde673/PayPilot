@@ -7,7 +7,7 @@
 }
 * { box-sizing: border-box; }
 body { margin: 0; min-width: 320px; }
-button { font: inherit; }
+button, input { font: inherit; }
 .app { min-height: 100vh; display: flex; justify-content: center; padding: 80px 24px; }
 .hero { width: min(920px, 100%); }
 .badge { display: inline-flex; padding: 8px 12px; border: 1px solid #d9e0ea; border-radius: 999px; background: white; font-size: 12px; font-weight: 700; letter-spacing: .08em; }
@@ -17,10 +17,17 @@ h1 span { color: #0070ba; }
 .command-card { margin-top: 48px; padding: 28px; border: 1px solid #dfe5ed; border-radius: 24px; background: white; box-shadow: 0 18px 50px rgba(24,39,75,.08); }
 .command-label { color: #697386; font-size: 12px; font-weight: 800; letter-spacing: .08em; }
 .command { margin: 14px 0 22px; font-size: 22px; font-weight: 600; }
+.command-card input { width: 100%; border: 1px solid #dfe5ed; border-radius: 12px; padding: 13px 14px; color: #111827; background: #fbfcfe; }
+.checkout-fields { display: grid; grid-template-columns: 1fr 160px; gap: 12px; margin-bottom: 18px; }
+.checkout-fields label { display: flex; flex-direction: column; gap: 7px; color: #697386; font-size: 12px; font-weight: 700; }
+.checkout-message { margin-top: 16px; padding: 12px 14px; border-radius: 12px; font-size: 14px; }
+.checkout-message.success { background: #eefaf4; color: #176b42; }
+.checkout-message.error { background: #fff1f1; color: #a52a2a; }
+.approve-link { display: inline-block; margin-top: 14px; color: #0070ba; font-weight: 700; text-decoration: none; }
 button { border: 0; border-radius: 12px; padding: 13px 20px; color: white; background: #0070ba; font-weight: 700; cursor: pointer; }
 button:hover { background: #005ea6; }
 .status-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 18px; }
 .status-grid div { display: flex; flex-direction: column; gap: 6px; padding: 18px; border-radius: 16px; background: white; border: 1px solid #e2e7ef; }
 .status-grid strong { font-size: 14px; }
 .status-grid span { color: #697386; font-size: 13px; }
-@media (max-width: 650px) { .app { padding: 48px 18px; } .status-grid { grid-template-columns: 1fr; } }
+@media (max-width: 650px) { .app { padding: 48px 18px; } .status-grid, .checkout-fields { grid-template-columns: 1fr; } }
