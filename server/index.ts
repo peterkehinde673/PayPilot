@@ -9,6 +9,7 @@ import { createPurchase, findPurchase, findPurchaseByPayPalOrderId, listPurchase
 import { addNotification, listNotifications } from './notifications.js';
 import { handleSupportRequest, type SupportAction } from './supportAgent.js';
 import { config } from './config.js';
+import { normalizeUserRequest, SECURITY_HEADERS } from './security.js';
 
 const approvalTokens = new Map<string, { amount: string; currency: string; expiresAt: number }>();
 const approvalCleanup = setInterval(() => {
@@ -29,6 +30,12 @@ const app = express();
 const PORT = config.port;
 
 app.disable('x-powered-by');
+app.use((_req, res, next) => {
+  for (const [name, value] of Object.entries(SECURITY_HEADERS)) {
+    res.setHeader(name, value);
+  }
+  next();
+});
 app.use(cors({ origin: config.webOrigin }));
 app.use(express.json({ limit: '1mb' }));
 
@@ -41,7 +48,12 @@ app.get('/api/health', (_req, res) => {
 });
 
 app.post('/api/ai/intent', async (req, res) => {
-  const request = typeof req.body?.request === 'string' ? req.body.request : '';
+  const request = normalizeUserRequest(req.body?.request);
+
+  if (!request) {
+    res.status(400).json({ error: 'Request must be a non-empty string of 1000 characters or fewer' });
+    return;
+  }
 
   try {
     const plan = await buildPurchasePlan(request);
