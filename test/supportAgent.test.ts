@@ -18,7 +18,8 @@ describe('post-purchase support agent', () => {
   });
 
   it('does not issue an unverified refund', () => {
-    const result = handleSupportRequest('support-purchase', 'refund_guidance');
+    createPurchase({ id: 'refund-purchase', productId: 'item-2', productName: 'Refund item', amount: '50.00', currency: 'USD', status: 'captured' });
+    const result = handleSupportRequest('refund-purchase', 'refund_guidance');
     expect(result?.message).toContain('does not issue an unverified refund');
   });
 });
