@@ -57,3 +57,7 @@ button:hover { background: #005ea6; }
 .history-row > div { display: grid; gap: 4px; }
 .history-row span { color: #697386; font-size: 12px; }
 .history-status { text-transform: capitalize; font-weight: 700; }
+.notification-panel { margin-top: 20px; padding: 20px; border: 1px solid #e2e7ef; border-radius: 18px; background: #fff; }
+.notification-row { display: grid; gap: 4px; padding: 12px 0; border-top: 1px solid #eef1f5; }
+.notification-row strong { font-size: 12px; text-transform: capitalize; }
+.notification-row span { color: #697386; font-size: 13px; }
