@@ -19,6 +19,6 @@ describe('post-purchase support agent', () => {
 
   it('does not issue an unverified refund', () => {
     const result = handleSupportRequest('support-purchase', 'refund_guidance');
-    expect(result?.message).toContain('do not issue an unverified refund');
+    expect(result?.message).toContain('does not issue an unverified refund');
   });
 });
