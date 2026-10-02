@@ -60,7 +60,9 @@ app.post('/api/paypal/orders', async (req, res) => {
     const order = await client.createOrder({
       amount,
       currency,
-      description
+      description,
+      returnUrl: process.env.PAYPAL_RETURN_URL ?? 'http://localhost:5173/',
+      cancelUrl: process.env.PAYPAL_CANCEL_URL ?? 'http://localhost:5173/'
     });
 
     res.status(201).json({
