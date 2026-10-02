@@ -20,6 +20,7 @@ h1 span { color: #0070ba; }
 .command-card input { width: 100%; border: 1px solid #dfe5ed; border-radius: 12px; padding: 13px 14px; color: #111827; background: #fbfcfe; }
 .checkout-fields { display: grid; grid-template-columns: 1fr 160px; gap: 12px; margin-bottom: 18px; }
 .checkout-fields label { display: flex; flex-direction: column; gap: 7px; color: #697386; font-size: 12px; font-weight: 700; }
+.intent-summary { margin-top: 16px; padding: 12px 14px; border-radius: 12px; background: #f1f6fb; color: #344054; font-size: 14px; }
 .checkout-message { margin-top: 16px; padding: 12px 14px; border-radius: 12px; font-size: 14px; }
 .checkout-message.success { background: #eefaf4; color: #176b42; }
 .checkout-message.error { background: #fff1f1; color: #a52a2a; }
