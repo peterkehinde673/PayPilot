@@ -5,7 +5,7 @@ import { AIProviderError, buildPurchasePlan } from './ai.js';
 import { discoverProducts } from './catalog.js';
 import { compareProducts } from './reasoning.js';
 import { evaluatePurchase } from './policy.js';
-import { createPurchase, findPurchase, findPurchaseByPayPalOrderId, listPurchases, updatePurchase } from './purchaseStore.js';
+import { createPurchase, findPurchase, findPurchaseByPayPalOrderId, listPurchases, removePurchase, updatePurchase } from './purchaseStore.js';
 import { addNotification, listNotifications } from './notifications.js';
 import { handleSupportRequest, type SupportAction } from './supportAgent.js';
 
@@ -183,6 +183,9 @@ app.post('/api/paypal/orders', async (req, res) => {
       return;
     }
 
+    if (typeof purchase !== 'undefined') {
+      removePurchase(purchase.id);
+    }
     console.error('PayPal order creation failed');
     res.status(502).json({ error: 'PayPal order creation failed' });
   }
