@@ -8,6 +8,7 @@ import { evaluatePurchase } from './policy.js';
 import { createPurchase, findPurchase, findPurchaseByPayPalOrderId, listPurchases, removePurchase, updatePurchase } from './purchaseStore.js';
 import { addNotification, listNotifications } from './notifications.js';
 import { handleSupportRequest, type SupportAction } from './supportAgent.js';
+import { config } from './config.js';
 
 const approvalTokens = new Map<string, { amount: string; currency: string; expiresAt: number }>();
 
@@ -18,7 +19,7 @@ function issueApprovalToken(amount: string, currency: string): string {
 }
 
 const app = express();
-const PORT = Number(process.env.PORT ?? 3001);
+const PORT = config.port;
 
 app.use(cors());
 app.use(express.json({ limit: '1mb' }));
@@ -153,7 +154,7 @@ app.post('/api/paypal/orders', async (req, res) => {
     const client = new PayPalClient({
       clientId,
       clientSecret,
-      baseUrl: process.env.PAYPAL_BASE_URL ?? 'https://api-m.sandbox.paypal.com'
+      baseUrl: config.paypalBaseUrl
     });
 
     const purchaseId = crypto.randomUUID();
@@ -164,8 +165,8 @@ app.post('/api/paypal/orders', async (req, res) => {
       amount,
       currency,
       description,
-      returnUrl: process.env.PAYPAL_RETURN_URL ?? 'http://localhost:5173/',
-      cancelUrl: process.env.PAYPAL_CANCEL_URL ?? 'http://localhost:5173/'
+      returnUrl: config.paypalReturnUrl,
+      cancelUrl: config.paypalCancelUrl
     });
 
     updatePurchase(purchase.id, { paypalOrderId: order.id });
