@@ -6,6 +6,7 @@ import { discoverProducts } from './catalog.js';
 import { compareProducts } from './reasoning.js';
 import { evaluatePurchase } from './policy.js';
 import { createPurchase, listPurchases, updatePurchase } from './purchaseStore.js';
+import { addNotification, listNotifications } from './notifications.js';
 
 const approvalTokens = new Map<string, { amount: string; currency: string; expiresAt: number }>();
 
@@ -63,6 +64,7 @@ app.post('/api/purchases/approval', (req, res) => {
   }
 
   const token = issueApprovalToken(amount, currency);
+  addNotification({ type: 'approval_required', purchaseId: `approval-${token}`, message: decision.reason });
   res.json({ approved: true, approvalToken: token, decision, expiresInSeconds: 600 });
 });
 
@@ -71,6 +73,10 @@ app.get('/api/config', (_req, res) => {
     paypalConfigured: Boolean(process.env.PAYPAL_CLIENT_ID && process.env.PAYPAL_CLIENT_SECRET),
     aiConfigured: Boolean(process.env.AI_API_KEY)
   });
+});
+
+app.get('/api/notifications', (_req, res) => {
+  res.json({ notifications: listNotifications() });
 });
 
 app.get('/api/purchases', (_req, res) => {
@@ -137,6 +143,7 @@ app.post('/api/paypal/orders', async (req, res) => {
     });
 
     updatePurchase(purchase.id, { paypalOrderId: order.id });
+    addNotification({ type: 'checkout_ready', purchaseId: purchase.id, message: `PayPal checkout is ready for ${purchase.productName}.` });
     res.status(201).json({
       purchaseId: purchase.id,
       id: order.id,
