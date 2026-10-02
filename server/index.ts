@@ -75,6 +75,15 @@ app.get('/api/config', (_req, res) => {
   });
 });
 
+app.get('/api/purchases/:purchaseId', (req, res) => {
+  const purchase = listPurchases().find((item) => item.id === req.params.purchaseId);
+  if (!purchase) {
+    res.status(404).json({ error: 'Purchase not found' });
+    return;
+  }
+  res.json({ purchase });
+});
+
 app.get('/api/notifications', (_req, res) => {
   res.json({ notifications: listNotifications() });
 });
