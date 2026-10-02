@@ -35,10 +35,11 @@ export class PayPalError extends Error {
 }
 
 export class PayPalClient {
+  private readonly config: PayPalClientConfig;
   private accessToken: string | null = null;
   private accessTokenExpiresAt = 0;
 
-  constructor(private readonly config: PayPalClientConfig) {
+  constructor(config: PayPalClientConfig) {
     const baseUrl = new URL(config.baseUrl);
     if (baseUrl.protocol !== 'https:') {
       throw new PayPalError('PayPal base URL must use HTTPS', 400);
