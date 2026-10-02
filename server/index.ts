@@ -21,7 +21,7 @@ function issueApprovalToken(amount: string, currency: string): string {
 const app = express();
 const PORT = config.port;
 
-app.use(cors());
+app.use(cors({ origin: config.webOrigin }));
 app.use(express.json({ limit: '1mb' }));
 
 app.get('/api/health', (_req, res) => {
@@ -207,7 +207,7 @@ app.post('/api/paypal/orders/:orderId/capture', async (req, res) => {
     const client = new PayPalClient({
       clientId,
       clientSecret,
-      baseUrl: process.env.PAYPAL_BASE_URL ?? 'https://api-m.sandbox.paypal.com'
+      baseUrl: config.paypalBaseUrl
     });
 
     const order = await client.captureOrder(req.params.orderId);
