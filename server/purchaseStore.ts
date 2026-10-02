@@ -25,6 +25,14 @@ export function updatePurchase(id: string, patch: Partial<PurchaseRecord>): Purc
   return updated;
 }
 
+export function findPurchase(id: string): PurchaseRecord | null {
+  return purchases.get(id) ?? null;
+}
+
+export function findPurchaseByPayPalOrderId(paypalOrderId: string): PurchaseRecord | null {
+  return [...purchases.values()].find((purchase) => purchase.paypalOrderId === paypalOrderId) ?? null;
+}
+
 export function listPurchases(): PurchaseRecord[] {
   return [...purchases.values()].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 }
