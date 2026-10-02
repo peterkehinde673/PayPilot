@@ -127,6 +127,16 @@ app.post('/api/paypal/orders', async (req, res) => {
   const approvalToken = typeof req.body?.approvalToken === 'string' ? req.body.approvalToken : '';
   const decision = evaluatePurchase(amount, currency);
 
+  if (!/^\d{1,9}(?:\.\d{1,2})?$/.test(amount) || Number(amount) <= 0) {
+    res.status(400).json({ error: 'Amount must be a positive USD-style decimal value' });
+    return;
+  }
+
+  if (!/^[A-Z]{3}$/.test(currency)) {
+    res.status(400).json({ error: 'Currency must be a 3-letter ISO code' });
+    return;
+  }
+
   if (decision.requiresApproval) {
     const approval = approvalTokens.get(approvalToken);
     if (!approval || approval.expiresAt <= Date.now() || approval.amount !== amount || approval.currency !== currency) {
@@ -136,16 +146,6 @@ app.post('/api/paypal/orders', async (req, res) => {
     approvalTokens.delete(approvalToken);
   } else if (!decision.allowed) {
     res.status(403).json({ error: decision.reason, decision });
-    return;
-  }
-
-  if (!/^\d{1,9}(?:\.\d{1,2})?$/.test(amount) || Number(amount) <= 0) {
-    res.status(400).json({ error: 'Amount must be a positive USD-style decimal value' });
-    return;
-  }
-
-  if (!/^[A-Z]{3}$/.test(currency)) {
-    res.status(400).json({ error: 'Currency must be a 3-letter ISO code' });
     return;
   }
 
@@ -179,6 +179,7 @@ app.post('/api/paypal/orders', async (req, res) => {
     });
   } catch (error: unknown) {
     if (error instanceof PayPalError) {
+      if (purchaseIdForRollback) removePurchase(purchaseIdForRollback);
       res.status(error.status >= 400 && error.status < 600 ? error.status : 502).json({
         error: error.message,
         paypalStatus: error.status
@@ -210,19 +211,18 @@ app.post('/api/paypal/orders/:orderId/capture', async (req, res) => {
       baseUrl: config.paypalBaseUrl
     });
 
-    const order = await client.captureOrder(req.params.orderId);
     const requestedPurchaseId = typeof req.body?.purchaseId === 'string' ? req.body.purchaseId : '';
     const purchase = requestedPurchaseId
       ? findPurchase(requestedPurchaseId)
-      : findPurchaseByPayPalOrderId(order.id);
-    if (!purchase || purchase.paypalOrderId !== order.id) {
+      : findPurchaseByPayPalOrderId(req.params.orderId);
+    if (!purchase || purchase.paypalOrderId !== req.params.orderId) {
       res.status(409).json({ error: 'PayPal order is not linked to the supplied purchase' });
       return;
     }
+
+    const order = await client.captureOrder(req.params.orderId);
     const updatedPurchase = updatePurchase(purchase.id, { status: 'captured' });
-    if (purchase) {
-      addNotification({ type: 'checkout_ready', purchaseId: purchase.id, message: `Payment captured for ${purchase.productName}.` });
-    }
+    addNotification({ type: 'checkout_ready', purchaseId: purchase.id, message: `Payment captured for ${purchase.productName}.` });
     res.json({ id: order.id, status: order.status, purchaseId: updatedPurchase?.id ?? null });
   } catch (error: unknown) {
     if (error instanceof PayPalError) {
