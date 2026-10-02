@@ -11,6 +11,13 @@ import { handleSupportRequest, type SupportAction } from './supportAgent.js';
 import { config } from './config.js';
 
 const approvalTokens = new Map<string, { amount: string; currency: string; expiresAt: number }>();
+const approvalCleanup = setInterval(() => {
+  const now = Date.now();
+  for (const [token, approval] of approvalTokens) {
+    if (approval.expiresAt <= now) approvalTokens.delete(token);
+  }
+}, 60_000);
+approvalCleanup.unref?.();
 
 function issueApprovalToken(amount: string, currency: string): string {
   const token = crypto.randomUUID();
@@ -21,6 +28,7 @@ function issueApprovalToken(amount: string, currency: string): string {
 const app = express();
 const PORT = config.port;
 
+app.disable('x-powered-by');
 app.use(cors({ origin: config.webOrigin }));
 app.use(express.json({ limit: '1mb' }));
 
