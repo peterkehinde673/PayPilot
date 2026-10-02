@@ -8,6 +8,7 @@ export const config = {
   paypalBaseUrl: process.env.PAYPAL_BASE_URL ?? 'https://api-m.sandbox.paypal.com',
   paypalReturnUrl: process.env.PAYPAL_RETURN_URL ?? 'http://localhost:5173/',
   paypalCancelUrl: process.env.PAYPAL_CANCEL_URL ?? 'http://localhost:5173/',
+  webOrigin: process.env.PAYPILOT_WEB_ORIGIN ?? 'http://localhost:5173',
   maxAutoPurchase: optionalPositiveAmount(process.env.PAYPILOT_MAX_AUTO_PURCHASE, '500.00'),
   policyCurrency: (process.env.PAYPILOT_POLICY_CURRENCY ?? 'USD').toUpperCase()
 };
