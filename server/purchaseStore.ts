@@ -17,6 +17,10 @@ export function createPurchase(record: Omit<PurchaseRecord, 'createdAt'>): Purch
   return purchase;
 }
 
+export function removePurchase(id: string): boolean {
+  return purchases.delete(id);
+}
+
 export function updatePurchase(id: string, patch: Partial<PurchaseRecord>): PurchaseRecord | null {
   const current = purchases.get(id);
   if (!current) return null;
