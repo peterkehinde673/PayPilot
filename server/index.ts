@@ -204,8 +204,8 @@ app.post('/api/paypal/orders', async (req, res) => {
 });
 
 app.post('/api/paypal/orders/:orderId/capture', async (req, res) => {
-  const clientId = process.env.PAYPAL_CLIENT_ID;
-  const clientSecret = process.env.PAYPAL_CLIENT_SECRET;
+  const clientId = config.paypalClientId;
+  const clientSecret = config.paypalClientSecret;
 
   if (!clientId || !clientSecret) {
     res.status(503).json({ error: 'PayPal Sandbox is not configured' });
