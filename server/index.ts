@@ -5,7 +5,7 @@ import { AIProviderError, buildPurchasePlan } from './ai.js';
 import { discoverProducts } from './catalog.js';
 import { compareProducts } from './reasoning.js';
 import { evaluatePurchase } from './policy.js';
-import { createPurchase, listPurchases, updatePurchase } from './purchaseStore.js';
+import { createPurchase, findPurchase, findPurchaseByPayPalOrderId, listPurchases, updatePurchase } from './purchaseStore.js';
 import { addNotification, listNotifications } from './notifications.js';
 import { handleSupportRequest, type SupportAction } from './supportAgent.js';
 
@@ -205,12 +205,19 @@ app.post('/api/paypal/orders/:orderId/capture', async (req, res) => {
     });
 
     const order = await client.captureOrder(req.params.orderId);
-    const purchaseId = typeof req.body?.purchaseId === 'string' ? req.body.purchaseId : '';
-    const purchase = purchaseId ? updatePurchase(purchaseId, { status: 'captured' }) : null;
+    const requestedPurchaseId = typeof req.body?.purchaseId === 'string' ? req.body.purchaseId : '';
+    const purchase = requestedPurchaseId
+      ? findPurchase(requestedPurchaseId)
+      : findPurchaseByPayPalOrderId(order.id);
+    if (!purchase || purchase.paypalOrderId !== order.id) {
+      res.status(409).json({ error: 'PayPal order is not linked to the supplied purchase' });
+      return;
+    }
+    const updatedPurchase = updatePurchase(purchase.id, { status: 'captured' });
     if (purchase) {
       addNotification({ type: 'checkout_ready', purchaseId: purchase.id, message: `Payment captured for ${purchase.productName}.` });
     }
-    res.json({ id: order.id, status: order.status, purchaseId: purchase?.id ?? null });
+    res.json({ id: order.id, status: order.status, purchaseId: updatedPurchase?.id ?? null });
   } catch (error: unknown) {
     if (error instanceof PayPalError) {
       res.status(error.status >= 400 && error.status < 600 ? error.status : 502).json({
