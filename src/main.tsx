@@ -9,6 +9,7 @@ function App() {
   const [amount, setAmount] = useState('900.00');
   const [currency, setCurrency] = useState('USD');
   const [checkoutUrl, setCheckoutUrl] = useState<string | null>(null);
+  const [intentSummary, setIntentSummary] = useState<string | null>(null);
   const [state, setState] = useState<CheckoutState>('idle');
   const [message, setMessage] = useState('');
 
@@ -33,10 +34,28 @@ function App() {
 
   async function startShopping() {
     setState('loading');
+    setIntentSummary(null);
     setCheckoutUrl(null);
     setMessage('');
 
     try {
+      const intentResponse = await fetch('/api/ai/intent', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ request })
+      });
+      const intentData = (await intentResponse.json()) as {
+        intent?: { category?: string; maxPrice?: string | null; currency?: string };
+        provider?: string;
+        error?: string;
+      };
+      if (!intentResponse.ok) throw new Error(intentData.error ?? 'Unable to understand the purchase request');
+
+      const intent = intentData.intent;
+      setIntentSummary(
+        `Intent: ${intent?.category ?? 'general'} · Budget: ${intent?.maxPrice ? `${intent.maxPrice} ${intent.currency ?? 'USD'}` : 'not specified'} · ${intentData.provider === 'ai' ? 'AI' : 'safe local parser'}`
+      );
+
       const response = await fetch('/api/paypal/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
