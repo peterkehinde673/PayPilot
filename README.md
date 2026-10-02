@@ -19,6 +19,15 @@ Frontend: http://localhost:5173
 
 API: http://localhost:3001
 
+Production start:
+
+```bash
+npm run build
+npm start
+```
+
+Environment configuration is documented in `.env.example`. Keep PayPal credentials and AI keys server-side; do not commit `.env` files.
+
 Health check:
 
 ```bash
