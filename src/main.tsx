@@ -13,6 +13,7 @@ function App() {
   const [policy, setPolicy] = useState<{ allowed: boolean; requiresApproval: boolean; reason: string } | null>(null);
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
   const [approvalToken, setApprovalToken] = useState<string | null>(null);
+  const [purchases, setPurchases] = useState<Array<{ id: string; productName: string; amount: string; currency: string; status: string; paypalOrderId?: string }>>([]);
   const [state, setState] = useState<CheckoutState>('idle');
   const [message, setMessage] = useState('');
 
@@ -34,6 +35,13 @@ function App() {
         setMessage(error instanceof Error ? error.message : 'Unable to capture the PayPal order');
       });
   }, []);
+
+  async function loadPurchases() {
+    const response = await fetch('/api/purchases');
+    if (!response.ok) return;
+    const data = (await response.json()) as { purchases?: typeof purchases };
+    setPurchases(data.purchases ?? []);
+  }
 
   async function startShopping() {
     setState('loading');
@@ -115,6 +123,7 @@ function App() {
           amount: selectedProduct.price,
           currency: selectedProduct.currency,
           description: selectedProduct.name,
+          productId: selectedProduct.id,
           approvalToken: token ?? undefined
         })
       });
@@ -126,6 +135,7 @@ function App() {
       setCheckoutUrl(data.approveUrl);
       setState('ready');
       setMessage(`PayPal order ${data.id ?? 'created'} is ready for approval.`);
+      await loadPurchases();
     } catch (error: unknown) {
       setState('error');
       setMessage(error instanceof Error ? error.message : 'Unable to start checkout');
@@ -140,6 +150,8 @@ function App() {
   }
 
   return (
+    <>
+
     <main className="app">
       <section className="hero">
         <div className="badge">PAYPILOT · AI COMMERCE</div>
@@ -213,7 +225,17 @@ function App() {
           <div><strong>Purchase Policy</strong><span>Phase 4</span></div>
         </div>
       </section>
-    </main>
+            <section className="purchase-history" aria-label="Purchase history">
+          <div className="section-heading"><h2>Purchase history</h2><button type="button" onClick={loadPurchases}>Refresh</button></div>
+          {purchases.length === 0 ? <p className="empty-state">No PayPilot purchases yet.</p> : purchases.map((purchase) => (
+            <div className="history-row" key={purchase.id}>
+              <div><strong>{purchase.productName}</strong><span>{purchase.currency} {purchase.amount}</span></div>
+              <span className="history-status">{purchase.status.replace('_', ' ')}</span>
+            </div>
+          ))}
+        </section>
+</main>
+    </>
   );
 }
 
