@@ -44,8 +44,8 @@ export class PayPalClient {
     if (baseUrl.protocol !== 'https:') {
       throw new PayPalError('PayPal base URL must use HTTPS', 400);
     }
-    baseUrl.pathname = baseUrl.pathname.replace(/\\/+$/, '');
-    this.config = { ...config, baseUrl: baseUrl.toString().replace(/\\/$/, '') };
+    baseUrl.pathname = baseUrl.pathname.replace(/\/+$/, '');
+    this.config = { ...config, baseUrl: baseUrl.toString().replace(/\/$/, '') };
   }
 
   async getAccessToken(): Promise<string> {
