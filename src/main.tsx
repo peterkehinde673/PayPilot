@@ -11,6 +11,7 @@ function App() {
   const [checkoutUrl, setCheckoutUrl] = useState<string | null>(null);
   const [intentSummary, setIntentSummary] = useState<string | null>(null);
   const [products, setProducts] = useState<Array<{ id: string; name: string; price: string; currency: string; reason: string }>>([]);
+  const [comparison, setComparison] = useState<{ recommendedId: string | null; summary: string } | null>(null);
   const [state, setState] = useState<CheckoutState>('idle');
   const [message, setMessage] = useState('');
 
@@ -37,6 +38,7 @@ function App() {
     setState('loading');
     setIntentSummary(null);
     setProducts([]);
+    setComparison(null);
     setCheckoutUrl(null);
     setMessage('');
 
@@ -49,13 +51,15 @@ function App() {
       const intentData = (await intentResponse.json()) as {
         intent?: { category?: string; maxPrice?: string | null; currency?: string };
         options?: Array<{ id: string; name: string; price: string; currency: string; reason: string }>;
+        comparison?: { recommendedId: string | null; summary: string };
         provider?: string;
         error?: string;
       };
       if (!intentResponse.ok) throw new Error(intentData.error ?? 'Unable to understand the purchase request');
 
       const intent = intentData.intent;
-      setProducts(Array.isArray((intentData as { options?: unknown }).options) ? ((intentData as { options: typeof products }).options ?? []) : []);
+      setProducts(intentData.options ?? []);
+      setComparison(intentData.comparison ?? null);
       setIntentSummary(
         `Intent: ${intent?.category ?? 'general'} · Budget: ${intent?.maxPrice ? `${intent.maxPrice} ${intent.currency ?? 'USD'}` : 'not specified'} · ${intentData.provider === 'ai' ? 'AI' : 'safe local parser'}`
       );
@@ -139,6 +143,8 @@ function App() {
           </button>
 
           {intentSummary && <div className="intent-summary" role="status">{intentSummary}</div>}
+
+          {comparison && <div className="comparison-summary" role="status">{comparison.summary}</div>}
 
           {products.length > 0 && (
             <div className="product-list" aria-label="Product options">
