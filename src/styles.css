@@ -47,3 +47,13 @@ button:hover { background: #005ea6; }
 .status-grid strong { font-size: 14px; }
 .status-grid span { color: #697386; font-size: 13px; }
 @media (max-width: 650px) { .app { padding: 48px 18px; } .status-grid, .checkout-fields { grid-template-columns: 1fr; } }
+
+.purchase-history { margin-top: 28px; padding: 20px; border: 1px solid #e2e7ef; border-radius: 18px; background: #fff; }
+.section-heading { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.section-heading h2 { margin: 0; font-size: 18px; }
+.section-heading button { border: 1px solid #d5dbe5; border-radius: 9px; background: #fff; padding: 7px 10px; cursor: pointer; }
+.empty-state { color: #697386; font-size: 14px; }
+.history-row { display: flex; justify-content: space-between; gap: 16px; align-items: center; padding: 13px 0; border-top: 1px solid #eef1f5; }
+.history-row > div { display: grid; gap: 4px; }
+.history-row span { color: #697386; font-size: 12px; }
+.history-status { text-transform: capitalize; font-weight: 700; }
