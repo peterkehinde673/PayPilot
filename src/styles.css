@@ -57,6 +57,12 @@ button:hover { background: #005ea6; }
 .history-row > div { display: grid; gap: 4px; }
 .history-row span { color: #697386; font-size: 12px; }
 .history-status { text-transform: capitalize; font-weight: 700; }
+.history-actions { display: grid; gap: 8px; justify-items: end; }
+.support-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.support-actions button { padding: 6px 9px; border: 1px solid #d5dbe5; border-radius: 8px; background: #fff; color: #344054; font-size: 11px; }
+.support-actions button:hover { background: #f5f7fa; }
+.support-actions button:disabled { opacity: .6; cursor: wait; }
+.support-result { margin: 14px 0; padding: 11px 13px; border-radius: 10px; background: #f1f6fb; color: #344054; font-size: 13px; line-height: 1.4; }
 .notification-panel { margin-top: 20px; padding: 20px; border: 1px solid #e2e7ef; border-radius: 18px; background: #fff; }
 .notification-row { display: grid; gap: 4px; padding: 12px 0; border-top: 1px solid #eef1f5; }
 .notification-row strong { font-size: 12px; text-transform: capitalize; }
