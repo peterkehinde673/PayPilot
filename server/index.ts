@@ -117,7 +117,7 @@ app.post('/api/purchases/:purchaseId/support', async (req, res) => {
   res.json(result);
 });
 
-app.get('/api/purchases/:purchaseId', (req, res) => {
+app.get('/api/purchases/:purchaseId', async (req, res) => {
   const purchase = await findPurchase(req.params.purchaseId);
   if (!purchase) {
     res.status(404).json({ error: 'Purchase not found' });
