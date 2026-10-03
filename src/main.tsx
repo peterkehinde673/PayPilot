@@ -16,6 +16,8 @@ function App() {
   const [approvalToken, setApprovalToken] = useState<string | null>(null);
   const [purchases, setPurchases] = useState<Array<{ id: string; productName: string; amount: string; currency: string; status: string; paypalOrderId?: string }>>([]);
   const [notifications, setNotifications] = useState<Array<{ type: string; message: string; createdAt: string }>>([]);
+  const [supportResult, setSupportResult] = useState<string | null>(null);
+  const [supportLoading, setSupportLoading] = useState(false);
   const [state, setState] = useState<CheckoutState>('idle');
   const [message, setMessage] = useState('');
 
@@ -34,6 +36,9 @@ function App() {
         setState('ready');
         setMessage(`PayPal order ${data.id ?? token} captured with status ${data.status ?? 'COMPLETED'}.`);
         window.history.replaceState({}, document.title, window.location.pathname);
+        setSupportResult(null);
+        await loadNotifications();
+        await loadPurchases();
       })
       .catch((error: unknown) => {
         setState('error');
@@ -156,6 +161,25 @@ function App() {
     }
   }
 
+  async function requestSupport(purchaseId: string, action: 'track' | 'refund_guidance' | 'order_status') {
+    setSupportLoading(true);
+    setSupportResult(null);
+    try {
+      const response = await fetch(`/api/purchases/${encodeURIComponent(purchaseId)}/support`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action })
+      });
+      const data = (await response.json()) as { message?: string; error?: string };
+      if (!response.ok) throw new Error(data.error ?? 'Support request failed');
+      setSupportResult(data.message ?? 'Support update received.');
+    } catch (error: unknown) {
+      setSupportResult(error instanceof Error ? error.message : 'Support request failed');
+    } finally {
+      setSupportLoading(false);
+    }
+  }
+
   async function approvePurchase() {
     if (!approvalToken || !selectedProductId) return;
     const product = products.find((item) => item.id === selectedProductId);
@@ -248,10 +272,24 @@ function App() {
 
         <section className="purchase-history" aria-label="Purchase history">
           <div className="section-heading"><h2>Purchase history</h2><button type="button" onClick={loadPurchases}>Refresh</button></div>
+          {supportResult && <div className="support-result" role="status">{supportResult}</div>}
           {purchases.length === 0 ? <p className="empty-state">No PayPilot purchases yet.</p> : purchases.map((purchase) => (
             <div className="history-row" key={purchase.id}>
-              <div><strong>{purchase.productName}</strong><span>{purchase.currency} {purchase.amount}</span></div>
-              <span className="history-status">{purchase.status.replace('_', ' ')}</span>
+              <div>
+                <strong>{purchase.productName}</strong>
+                <span>{purchase.currency} {purchase.amount}</span>
+                {purchase.paypalOrderId && <span>PayPal order {purchase.paypalOrderId}</span>}
+              </div>
+              <div className="history-actions">
+                <span className="history-status">{purchase.status.replace('_', ' ')}</span>
+                {purchase.status === 'captured' && (
+                  <div className="support-actions">
+                    <button type="button" onClick={() => void requestSupport(purchase.id, 'order_status')} disabled={supportLoading}>Status</button>
+                    <button type="button" onClick={() => void requestSupport(purchase.id, 'track')} disabled={supportLoading}>Track</button>
+                    <button type="button" onClick={() => void requestSupport(purchase.id, 'refund_guidance')} disabled={supportLoading}>Refund help</button>
+                  </div>
+                )}
+              </div>
             </div>
           ))}
         </section>
