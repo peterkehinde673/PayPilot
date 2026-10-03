@@ -1,4 +1,4 @@
-import { listPurchases } from './purchaseStore.js';
+import { findPurchase } from './purchaseStore.js';
 
 export type SupportAction = 'track' | 'refund_guidance' | 'order_status';
 
@@ -8,8 +8,8 @@ export type SupportResponse = {
   message: string;
 };
 
-export function handleSupportRequest(purchaseId: string, action: SupportAction): SupportResponse | null {
-  const purchase = listPurchases().find((item) => item.id === purchaseId);
+export async function handleSupportRequest(purchaseId: string, action: SupportAction): Promise<SupportResponse | null> {
+  const purchase = await findPurchase(purchaseId);
   if (!purchase) return null;
 
   if (action === 'refund_guidance') {
