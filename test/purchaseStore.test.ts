@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { createPurchase, listPurchases, updatePurchase } from '../server/purchaseStore';
 
 describe('purchase store', () => {
-  it('creates and updates purchase records', () => {
+  it('creates and updates purchase records', async () => {
     createPurchase({
       id: 'purchase-1',
       productId: 'laptop-pro-14',
@@ -12,16 +12,16 @@ describe('purchase store', () => {
       status: 'approval_required'
     });
 
-    const updated = updatePurchase('purchase-1', { status: 'checkout_created', paypalOrderId: 'ORDER-1' });
+    const updated = await updatePurchase('purchase-1', { status: 'checkout_created', paypalOrderId: 'ORDER-1' });
     expect(updated?.status).toBe('checkout_created');
     expect(updated?.paypalOrderId).toBe('ORDER-1');
-    expect(listPurchases()[0]?.productName).toBe('Pro 14 Developer Laptop');
+    expect((await listPurchases())[0]?.productName).toBe('Pro 14 Developer Laptop');
   });
 });
 
 
 describe('purchase capture state', () => {
-  it('tracks a successful captured transition', () => {
+  it('tracks a successful captured transition', async () => {
     createPurchase({
       id: 'capture-test',
       productId: 'laptop',
@@ -32,9 +32,9 @@ describe('purchase capture state', () => {
       paypalOrderId: 'ORDER-CAPTURE'
     });
 
-    const updated = updatePurchase('capture-test', { status: 'captured' });
+    const updated = await updatePurchase('capture-test', { status: 'captured' });
 
     expect(updated?.status).toBe('captured');
-    expect(listPurchases().find((item) => item.id === 'capture-test')?.status).toBe('captured');
+    expect((await listPurchases()).find((item) => item.id === 'capture-test')?.status).toBe('captured');
   });
 });
