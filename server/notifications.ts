@@ -1,5 +1,5 @@
 export type PurchaseNotification = {
-  type: 'approval_required' | 'checkout_ready';
+  type: 'approval_required' | 'checkout_ready' | 'payment_captured';
   purchaseId: string;
   message: string;
   createdAt: string;
