@@ -3,7 +3,7 @@ import { createPurchase } from '../server/purchaseStore';
 import { handleSupportRequest } from '../server/supportAgent';
 
 describe('post-purchase support agent', () => {
-  it('returns safe order status guidance', () => {
+  it('returns safe order status guidance', async () => {
     createPurchase({
       id: 'support-purchase',
       productId: 'item-1',
@@ -13,13 +13,13 @@ describe('post-purchase support agent', () => {
       status: 'captured'
     });
 
-    const result = handleSupportRequest('support-purchase', 'order_status');
+    const result = await handleSupportRequest('support-purchase', 'order_status');
     expect(result?.message).toContain('captured');
   });
 
-  it('does not issue an unverified refund', () => {
+  it('does not issue an unverified refund', async () => {
     createPurchase({ id: 'refund-purchase', productId: 'item-2', productName: 'Refund item', amount: '50.00', currency: 'USD', status: 'captured' });
-    const result = handleSupportRequest('refund-purchase', 'refund_guidance');
+    const result = await handleSupportRequest('refund-purchase', 'refund_guidance');
     expect(result?.message).toContain('does not issue an unverified refund');
   });
 });
