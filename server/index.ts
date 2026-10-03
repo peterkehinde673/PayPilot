@@ -10,6 +10,7 @@ import { addNotification, listNotifications } from './notifications.js';
 import { handleSupportRequest, type SupportAction } from './supportAgent.js';
 import { config } from './config.js';
 import { normalizeUserRequest, SECURITY_HEADERS } from './security.js';
+import { initializeDatabase } from './db.js';
 
 const approvalTokens = new Map<string, { amount: string; currency: string; expiresAt: number }>();
 const approvalCleanup = setInterval(() => {
@@ -80,7 +81,7 @@ app.post('/api/ai/intent', async (req, res) => {
   }
 });
 
-app.post('/api/purchases/approval', (req, res) => {
+app.post('/api/purchases/approval', async (req, res) => {
   const amount = typeof req.body?.amount === 'string' ? req.body.amount.trim() : '';
   const currency = typeof req.body?.currency === 'string' ? req.body.currency.trim().toUpperCase() : '';
   const decision = evaluatePurchase(amount, currency);
@@ -91,7 +92,7 @@ app.post('/api/purchases/approval', (req, res) => {
   }
 
   const token = issueApprovalToken(amount, currency);
-  addNotification({ type: 'approval_required', purchaseId: 'approval-pending', message: decision.reason });
+  await addNotification({ type: 'approval_required', purchaseId: 'approval-pending', message: decision.reason });
   res.json({ approved: true, approvalToken: token, decision, expiresInSeconds: 600 });
 });
 
@@ -102,13 +103,13 @@ app.get('/api/config', (_req, res) => {
   });
 });
 
-app.post('/api/purchases/:purchaseId/support', (req, res) => {
+app.post('/api/purchases/:purchaseId/support', async (req, res) => {
   const action = typeof req.body?.action === 'string' ? req.body.action as SupportAction : undefined;
   if (!action || !['track', 'refund_guidance', 'order_status'].includes(action)) {
     res.status(400).json({ error: 'Unsupported support action' });
     return;
   }
-  const result = handleSupportRequest(req.params.purchaseId, action);
+  const result = await handleSupportRequest(req.params.purchaseId, action);
   if (!result) {
     res.status(404).json({ error: 'Purchase not found' });
     return;
@@ -117,7 +118,7 @@ app.post('/api/purchases/:purchaseId/support', (req, res) => {
 });
 
 app.get('/api/purchases/:purchaseId', (req, res) => {
-  const purchase = listPurchases().find((item) => item.id === req.params.purchaseId);
+  const purchase = await findPurchase(req.params.purchaseId);
   if (!purchase) {
     res.status(404).json({ error: 'Purchase not found' });
     return;
@@ -125,12 +126,12 @@ app.get('/api/purchases/:purchaseId', (req, res) => {
   res.json({ purchase });
 });
 
-app.get('/api/notifications', (_req, res) => {
-  res.json({ notifications: listNotifications() });
+app.get('/api/notifications', async (_req, res) => {
+  res.json({ notifications: await listNotifications() });
 });
 
-app.get('/api/purchases', (_req, res) => {
-  res.json({ purchases: listPurchases() });
+app.get('/api/purchases', async (_req, res) => {
+  res.json({ purchases: await listPurchases() });
 });
 
 app.post('/api/paypal/orders', async (req, res) => {
@@ -184,7 +185,7 @@ app.post('/api/paypal/orders', async (req, res) => {
 
     const purchaseId = crypto.randomUUID();
     purchaseIdForRollback = purchaseId;
-    const purchase = createPurchase({ id: purchaseId, productId: typeof req.body?.productId === 'string' ? req.body.productId : 'unknown', productName: description ?? 'PayPilot purchase', amount, currency, status: 'checkout_created' });
+    const purchase = await createPurchase({ id: purchaseId, productId: typeof req.body?.productId === 'string' ? req.body.productId : 'unknown', productName: description ?? 'PayPilot purchase', amount, currency, status: 'checkout_created' });
 
     const order = await client.createOrder({
       amount,
@@ -194,8 +195,8 @@ app.post('/api/paypal/orders', async (req, res) => {
       cancelUrl: config.paypalCancelUrl
     });
 
-    updatePurchase(purchase.id, { paypalOrderId: order.id });
-    addNotification({ type: 'checkout_ready', purchaseId: purchase.id, message: `PayPal checkout is ready for ${purchase.productName}.` });
+    await updatePurchase(purchase.id, { paypalOrderId: order.id });
+    await addNotification({ type: 'checkout_ready', purchaseId: purchase.id, message: `PayPal checkout is ready for ${purchase.productName}.` });
     res.status(201).json({
       purchaseId: purchase.id,
       id: order.id,
@@ -204,7 +205,7 @@ app.post('/api/paypal/orders', async (req, res) => {
     });
   } catch (error: unknown) {
     if (error instanceof PayPalError) {
-      if (purchaseIdForRollback) removePurchase(purchaseIdForRollback);
+      if (purchaseIdForRollback) await removePurchase(purchaseIdForRollback);
       res.status(error.status >= 400 && error.status < 600 ? error.status : 502).json({
         error: error.message,
         paypalStatus: error.status
@@ -213,7 +214,7 @@ app.post('/api/paypal/orders', async (req, res) => {
     }
 
     if (purchaseIdForRollback) {
-      removePurchase(purchaseIdForRollback);
+      await removePurchase(purchaseIdForRollback);
     }
     console.error('PayPal order creation failed');
     res.status(502).json({ error: 'PayPal order creation failed' });
@@ -238,8 +239,8 @@ app.post('/api/paypal/orders/:orderId/capture', async (req, res) => {
 
     const requestedPurchaseId = typeof req.body?.purchaseId === 'string' ? req.body.purchaseId : '';
     const purchase = requestedPurchaseId
-      ? findPurchase(requestedPurchaseId)
-      : findPurchaseByPayPalOrderId(req.params.orderId);
+      ? await findPurchase(requestedPurchaseId)
+      : await findPurchaseByPayPalOrderId(req.params.orderId);
     if (!purchase || purchase.paypalOrderId !== req.params.orderId) {
       res.status(409).json({ error: 'PayPal order is not linked to the supplied purchase' });
       return;
@@ -251,8 +252,8 @@ app.post('/api/paypal/orders/:orderId/capture', async (req, res) => {
     }
 
     const order = await client.captureOrder(req.params.orderId);
-    const updatedPurchase = updatePurchase(purchase.id, { status: 'captured' });
-    addNotification({ type: 'payment_captured', purchaseId: purchase.id, message: `Payment captured for ${purchase.productName}.` });
+    const updatedPurchase = await updatePurchase(purchase.id, { status: 'captured' });
+    await addNotification({ type: 'payment_captured', purchaseId: purchase.id, message: `Payment captured for ${purchase.productName}.` });
     res.json({ id: order.id, status: order.status, purchaseId: updatedPurchase?.id ?? null });
   } catch (error: unknown) {
     if (error instanceof PayPalError) {
@@ -268,6 +269,12 @@ app.post('/api/paypal/orders/:orderId/capture', async (req, res) => {
   }
 });
 
-app.listen(PORT, () => {
-  console.log(`PayPilot API listening on http://localhost:${PORT}`);
+(async () => {
+  await initializeDatabase();
+  app.listen(PORT, () => {
+    console.log(`PayPilot API listening on http://localhost:${PORT}`);
+  });
+})().catch((error: unknown) => {
+  console.error('PayPilot database initialization failed', error);
+  process.exit(1);
 });
