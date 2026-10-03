@@ -252,7 +252,7 @@ app.post('/api/paypal/orders/:orderId/capture', async (req, res) => {
 
     const order = await client.captureOrder(req.params.orderId);
     const updatedPurchase = updatePurchase(purchase.id, { status: 'captured' });
-    addNotification({ type: 'checkout_ready', purchaseId: purchase.id, message: `Payment captured for ${purchase.productName}.` });
+    addNotification({ type: 'payment_captured', purchaseId: purchase.id, message: `Payment captured for ${purchase.productName}.` });
     res.json({ id: order.id, status: order.status, purchaseId: updatedPurchase?.id ?? null });
   } catch (error: unknown) {
     if (error instanceof PayPalError) {
