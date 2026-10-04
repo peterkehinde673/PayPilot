@@ -14,15 +14,24 @@ User request → AI purchase intent → Product discovery → Comparison & reaso
 - Product comparison and recommendation
 - Configurable automatic spending limit with human approval above the limit
 - PayPal Sandbox order creation and capture
-- Purchase history, notifications, and support guidance
+- Persistent purchase history and notifications backed by Render Postgres
+- Post-purchase support guidance for status, tracking, and refund workflows
 - Server-side credential handling and transaction-linkage checks
 - API input bounds, browser security headers, HTTPS-only PayPal transport, and request timeouts
 - Automated lint, build, and test checks in GitHub Actions
 - Render deployment blueprint in `render.yaml`
 
+## Deployment
+
+The production prototype is deployed on Render. The Render Blueprint associates the `paypilot` web service with the `paypilot-db` Postgres database and injects `DATABASE_URL` from the database connection string.
+
+The current hackathon deployment uses PayPal Sandbox credentials. Do not use Sandbox credentials for live commerce.
+
 ## Production notes
 
-PayPilot currently uses in-memory purchase and notification storage for the hackathon prototype. Restarting the service clears that runtime state. A persistent database should be added before treating the application as a production commerce system.
+Purchase and notification data is persisted in Postgres when `DATABASE_URL` is configured. The application retains an in-memory fallback for local development without a database.
+
+The current hackathon prototype should still receive a final operational review before being used for real-money commerce, including live PayPal credentials, production merchant configuration, database backups/retention, monitoring, and a formal security review.
 
 ## Development
 
