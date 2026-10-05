@@ -21,7 +21,7 @@ h1 span { color: #0070ba; }
 .approval-button { margin-top: 10px; width: 100%; padding: 12px 16px; border: 0; border-radius: 10px; background: #111827; color: #fff; font-weight: 800; cursor: pointer; }
 .approval-button:disabled { opacity: .6; cursor: wait; }
 .checkout-note { color: #697386; font-size: 12px; font-weight: 600; }
-.checkout-fields { display: grid; grid-template-columns: 1fr 160px; gap: 12px; margin-bottom: 18px; }
+.checkout-fields { display: grid; grid-template-columns: 1fr; gap: 12px; margin: 12px 0 18px; }
 .checkout-fields label { display: flex; flex-direction: column; gap: 7px; color: #697386; font-size: 12px; font-weight: 700; }
 .policy-summary { margin-top: 12px; padding: 12px 14px; border-radius: 12px; display: grid; gap: 4px; font-size: 13px; }
 .policy-summary span { color: #697386; line-height: 1.4; }
@@ -30,7 +30,7 @@ h1 span { color: #0070ba; }
 .policy-summary.blocked { border: 1px solid #efb1b1; background: #fff3f3; }
 .comparison-summary { margin-top: 16px; padding: 14px; border: 1px solid #d9e5f0; border-radius: 14px; background: #f5f9fd; color: #344054; font-size: 14px; line-height: 1.5; }
 .product-list { display: grid; gap: 10px; margin-top: 16px; }
-.product-card { width: 100%; border: 1px solid #e2e7ef; cursor: pointer; text-align: left; display: flex; justify-content: space-between; gap: 16px; align-items: center; padding: 14px; border: 1px solid #e2e7ef; border-radius: 14px; background: #fbfcfe; }
+.product-card { width: 100%; border: 1px solid #e2e7ef; cursor: pointer; text-align: left; display: flex; justify-content: space-between; gap: 16px; align-items: center; padding: 14px; border-radius: 14px; background: #fbfcfe; }
 .product-card.selected { border-color: #0070ba; box-shadow: 0 0 0 2px rgba(0, 112, 186, 0.08); }
 .product-card strong { font-size: 14px; }
 .product-card p { margin: 5px 0 0; color: #697386; font-size: 12px; line-height: 1.4; }
@@ -46,15 +46,15 @@ button:hover { background: #005ea6; }
 .status-grid div { display: flex; flex-direction: column; gap: 6px; padding: 18px; border-radius: 16px; background: white; border: 1px solid #e2e7ef; }
 .status-grid strong { font-size: 14px; }
 .status-grid span { color: #697386; font-size: 13px; }
-@media (max-width: 650px) { .app { padding: 48px 18px; } .status-grid, .checkout-fields { grid-template-columns: 1fr; } }
 
 .purchase-history { margin-top: 28px; padding: 20px; border: 1px solid #e2e7ef; border-radius: 18px; background: #fff; }
 .section-heading { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
 .section-heading h2 { margin: 0; font-size: 18px; }
-.section-heading button { border: 1px solid #d5dbe5; border-radius: 9px; background: #fff; padding: 7px 10px; cursor: pointer; }
+.section-heading button { border: 1px solid #d5dbe5; border-radius: 9px; background: #fff; padding: 7px 10px; cursor: pointer; color: #344054; }
+.section-heading button:hover { background: #f5f7fa; }
 .empty-state { color: #697386; font-size: 14px; }
 .history-row { display: flex; justify-content: space-between; gap: 16px; align-items: center; padding: 13px 0; border-top: 1px solid #eef1f5; }
-.history-row > div { display: grid; gap: 4px; }
+.history-row > div { display: grid; gap: 4px; min-width: 0; }
 .history-row span { color: #697386; font-size: 12px; }
 .history-status { text-transform: capitalize; font-weight: 700; }
 .history-actions { display: grid; gap: 8px; justify-items: end; }
@@ -66,4 +66,14 @@ button:hover { background: #005ea6; }
 .notification-panel { margin-top: 20px; padding: 20px; border: 1px solid #e2e7ef; border-radius: 18px; background: #fff; }
 .notification-row { display: grid; gap: 4px; padding: 12px 0; border-top: 1px solid #eef1f5; }
 .notification-row strong { font-size: 12px; text-transform: capitalize; }
-.notification-row span { color: #697386; font-size: 13px; }
+.notification-row span { color: #697386; font-size: 13px; line-height: 1.4; }
+
+@media (max-width: 650px) {
+  .app { padding: 48px 18px; }
+  .command-card { padding: 20px; }
+  .status-grid { grid-template-columns: 1fr; }
+  .history-row { align-items: flex-start; flex-direction: column; }
+  .history-actions { width: 100%; justify-items: start; }
+  .support-actions { width: 100%; }
+  .support-actions button { flex: 1 1 auto; }
+}
